@@ -3,7 +3,8 @@ import ApiError from "../../../errors/ApiErrors";
 import { hashPassword } from "../../../helpars/passwordHelpers";
 import prisma from "../../../shared/prisma";
 
-const registerUser = async ({name,email,password}:{name:string,email:string,password:string})=>{
+const registerUser = async ({firstName,lastName,email,password}:{firstName:string,lastName:string,email:string,password:string})=>{
+ 
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
@@ -16,7 +17,8 @@ const registerUser = async ({name,email,password}:{name:string,email:string,pass
 
   const user = await prisma.user.create({
     data: {
-      name,
+    first_name: firstName,
+    last_name: lastName,
       email,
       password: hashedPassword,
     },
@@ -25,6 +27,12 @@ const registerUser = async ({name,email,password}:{name:string,email:string,pass
   return user;
 }
 
+const getAllUsers = async () => {
+  const users = await prisma.user.findMany();
+  return users;
+};
+
 export const UserServices = {
     registerUser,
+    getAllUsers
     };

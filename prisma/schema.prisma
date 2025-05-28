@@ -14,33 +14,43 @@ enum UserRole {
 }
 
 model User {
-  id String @id @default(cuid())
+  id        String    @id @default(cuid())
 
-  name      String
-  email     String @unique
-  password  String
+  // Updated fields (from checkout form)
+  first_name String 
+  last_name String 
+  email     String    @unique             // Required, from form
+  password  String                        // Updated validation (see below)
+  
+  // Address fields (new, from form)
+  addressLine1 String? @map("address_line1")  
+  addressLine2 String? @map("address_line2")  
+  country      String? @default("United States (US)")  
+  city         String?  
+  state        String?  
+  zipCode      String? @map("zip_code")  
+  referralSource String? @map("referral_source")  
 
-  role UserRole @default(USER)
+  // Existing fields (unchanged)
+  role          UserRole  @default(USER)
+  otp           String?
+  otpExpiresAt  DateTime?
+  isVerified    Boolean   @default(false)
+  accessToken   String?
+  refreshToken  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  otp          String?
-  otpExpiresAt DateTime?
-  isVerified   Boolean   @default(false)
-
-  accessToken  String?
-  refreshToken String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  blogPosts BlogPost[]
-  supportTickets supportTicket[]
- 
+  // Relations (unchanged)
+  blogPosts              BlogPost[]
+  supportTickets          SupportTicket[]
+  subscriptions           Subscription[]
+  districtRegistrations   DistrictRegistration[]
 
   @@map("users")
 }
 
-
-model  DistricRegistrationForm {
+model DistrictRegistration {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now())
   
@@ -78,6 +88,12 @@ model  DistricRegistrationForm {
   
   // Metadata
   formVersion String @default("digital.SLP")
+
+  // Subscription reference
+  subscriptionId String?
+subscriptions Subscription[]
+  userId String
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Team {
@@ -87,19 +103,21 @@ model Team {
   degination String?
   image String?
 }
+
 model BlogPost {
   id String @id @default(cuid())
   title String
   image String?
   content String
   authorId String
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   author User @relation(fields: [authorId], references: [id])
 }
 
-model supportTicket {
+model SupportTicket {
   id String @id @default(cuid())
   title String
   description String
@@ -110,4 +128,72 @@ model supportTicket {
 
   userId String
   user User @relation(fields: [userId], references: [id])
+}
+
+model ContentItem {
+  id          String   @id @default(cuid())
+  type        ContentType
+  order       Int
+  title       String
+  description String?
+  
+  // For MCQ - stores array of questions with options
+  mcqData     Json?
+  
+  // For media slider - stores array of media items
+  mediaData   Json?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ContentType {
+  MCQ
+  MEDIA_SLIDER
+  VIDEO_SLIDER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PENDING
+  TRIAL
+}
+
+enum SubscriptionPlan {
+  ANNUAL_PREMIUM
+  QUARTERLY_PREMIUM
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  userId String
+  plan SubscriptionPlan
+  status SubscriptionStatus @default(ACTIVE)
+  startDate DateTime @default(now())
+  endDate DateTime?
+  licenseCount Int @default(1)
+  
+  // Features
+  hasInteractivePDFs Boolean @default(true)
+  hasDigitalGamesLibrary Boolean @default(true)
+  receivesWeeklyEmails Boolean @default(true)
+  hasPodcastAccess Boolean @default(true)
+  hasHomeworkSheets Boolean @default(true)
+  quickLinksMonthlyLimit Int
+  
+  // Payment info
+  isGroupDiscount Boolean @default(false)
+  groupSize Int?
+  paymentAmount Float
+  paymentCurrency String @default("USD")
+  lastPaymentDate DateTime?
+  nextPaymentDate DateTime?
+  
+  user User @relation(fields: [userId], references: [id])
+   districtRegistrationId String
+  districtRegistration DistrictRegistration @relation(fields: [districtRegistrationId], references: [id])
+  
+  @@map("subscriptions")
 }

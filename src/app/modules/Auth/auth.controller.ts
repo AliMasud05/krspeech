@@ -50,6 +50,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
   const result = await AuthServices.loginUser(email, password);
 
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

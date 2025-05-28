@@ -129,99 +129,71 @@ const loginUser = async (
   password: string,
   keepMeLogin?: boolean
 ) => {
+  // Find user by email
   const userData = await prisma.user.findUniqueOrThrow({
-    where: {
-      email: email,
-    },
+    where: { email }
   });
 
   if (!userData) {
-    throw new ApiError(404, "User not found");
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  if (!password || !userData?.password) {
+  if (!password || !userData.password) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Password is required");
   }
 
-  const isCorrectPassword: boolean = await comparePassword(
-    password,
-    userData.password
-  );
-
+  // Verify password
+  const isCorrectPassword = await comparePassword(password, userData.password);
   if (!isCorrectPassword) {
-    throw new ApiError(401, "Password is incorrect");
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Password is incorrect");
   }
 
-  if (userData?.isVerified === false) {
-    const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+  // Generate tokens
+  const tokenExpiry = keepMeLogin 
+    ? config.jwt.long_expires_in 
+    : config.jwt.expires_in;
 
-    await prisma.user.update({
-      where: {
-        id: userData.id,
-      },
-      data: {
-        otp: randomOtp,
-        otpExpiresAt: otpExpiry,
-      },
-    });
-
-    // const html = otpEmail(randomOtp);
-
-    // await emailSender("OTP", userData.email, html);
-
-    return {
+  const accessToken = jwtHelpers.generateToken(
+    {
       id: userData.id,
-   name: userData.name,
       email: userData.email,
       role: userData.role,
-    };
-  } else {
-    const accessToken = jwtHelpers.generateToken(
-      {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-      },
-      config.jwt.jwt_secret as Secret,
-      config.jwt.expires_in as string
-    );
+    },
+    config.jwt.jwt_secret as Secret,
+    tokenExpiry
+  );
 
-    // const accessToken = jwtHelpers.generateToken(
-    //   {
-    //     id: userData.id,
-    //     email: userData.email,
-    //     role: userData.role,
-    //   },
-    //   config.jwt.jwt_secret as Secret,
-    //   keepMeLogin as boolean,
-    // );
+  const refreshToken = jwtHelpers.generateToken(
+    {
+      id: userData.id,
+      email: userData.email,
+      role: userData.role,
+    },
+    config.jwt.refresh_token_secret as Secret,
+    config.jwt.refresh_token_expires_in as string
+  );
 
-    const refreshToken = jwtHelpers.generateToken(
-      {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-      },
-      config.jwt.refresh_token_secret as Secret,
-      config.jwt.refresh_token_expires_in as string
-    );
-
-    await prisma.user.update({
-      where: {
-        email: userData.email,
-      },
-      data: {
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      },
-    });
-
-    return {
+  // Update user with new tokens
+  await prisma.user.update({
+    where: { email },
+    data: {
       accessToken,
       refreshToken,
-    };
-  }
+    },
+  });
+
+  // Return tokens and basic user info
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: userData.id,
+      firstName: userData.first_name,
+      lastName: userData.last_name,
+      email: userData.email,
+      role: userData.role,
+    }
+  };
 };
 
 // get user profile
@@ -236,7 +208,8 @@ const getMyProfile = async (email: string) => {
     },
     select: {
       id: true,
-     name: true,
+      first_name: true,
+      last_name: true,
       email: true,
       role: true,
       isVerified: true,
