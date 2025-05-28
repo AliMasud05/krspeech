@@ -1,87 +1,75 @@
-import { Request, Response } from 'express';
-import { teamService } from './team.service';
-import { validationResult } from 'express-validator';
-import sendResponse from '../../../shared/sendResponse';
+import httpStatus from "http-status";
+import { Request, Response } from "express";
+import catchAsync from "../../../shared/catchAsync";
+import sendResponse from "../../../shared/sendResponse";
+import { TeamServices } from "./team.service";
 
-
-
-export const teamController = {
-  async create(req: Request, res: Response) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-    try {
-      const team = await teamService.create(req.body);
-       sendResponse(res, {
-        success: true,
-        statusCode: 201,
-        message: "Team created successfully",
-        data: team,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ message: errorMessage });
-    }
-  },
-
-  async getAll(req: Request, res: Response) {
-    try {
-      const teams = await teamService.findAll();
-     sendResponse(res, {
-        success: true,
-        statusCode: 200,
-        message: "Teams retrieved successfully",
-        data: teams,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ message: errorMessage });
-    }
-  },
-
-  async getById(req: Request, res: Response) {
-    try {
-      const team = await teamService.findById(req.params.id);
-      if (!team) return res.status(404).json({ message: 'Team not found' });
-     sendResponse(res, {
-        success: true,
-        statusCode: 200,
-        message: "Team retrieved successfully",
-        data: team,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ message: errorMessage });
-    }
-  },
-
-  async update(req: Request, res: Response) {
-    try {
-      const updated = await teamService.update(req.params.id, req.body);
-      sendResponse(res, {
-        success: true,
-        statusCode: 200,
-        message: "Team updated successfully",
-        data: updated,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ message: errorMessage });
-    }
-  },
-
-  async delete(req: Request, res: Response) {
-    try {
-    const result= await teamService.delete(req.params.id);
-    sendResponse(res, {
-      success: true,
-      statusCode: 200,
-      message: "Team deleted successfully",
-      data: result,
+const createTeam = catchAsync(async (req: Request, res: Response) => {
+    const { name, description, designation, image } = req.body;
+    
+    const result = await TeamServices.createTeam({
+        name,
+        description,
+        designation,
+        image
     });
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  },
+    
+    sendResponse(res, {
+        statusCode: httpStatus.CREATED,
+        success: true,
+        message: "Team member created successfully",
+        data: result,
+    });
+});
+
+const getAllTeams = catchAsync(async (req: Request, res: Response) => {
+    const result = await TeamServices.getAllTeams();
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Team members retrieved successfully",
+        data: result,
+    });
+});
+
+const getTeamById = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await TeamServices.getTeamById(id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Team member retrieved successfully",
+        data: result,
+    });
+});
+
+const updateTeam = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const payload = req.body;
+    const result = await TeamServices.updateTeam(id, payload);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Team member updated successfully",
+        data: result,
+    });
+});
+
+const deleteTeam = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await TeamServices.deleteTeam(id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Team member deleted successfully",
+        data: result,
+    });
+});
+
+export const TeamController = {
+    createTeam,
+    getAllTeams,
+    getTeamById,
+    updateTeam,
+    deleteTeam
 };

@@ -3,30 +3,44 @@ import ApiError from "../../../errors/ApiErrors";
 import { hashPassword } from "../../../helpars/passwordHelpers";
 import prisma from "../../../shared/prisma";
 
-const registerUser = async ({firstName,lastName,email,password}:{firstName:string,lastName:string,email:string,password:string})=>{
- 
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  });
+const registerUser = async (payload: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    country?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    referralSource?: string;
+}) => {
+    const { email, password, ...userData } = payload;
 
-  if (existingUser) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User already exists");
-  }
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+    });
 
-  const hashedPassword = await hashPassword(password);
+    if (existingUser) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "User already exists");
+    }
 
-  const user = await prisma.user.create({
-    data: {
-    first_name: firstName,
-    last_name: lastName,
-      email,
-      password: hashedPassword,
-    },
-  });
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
-  return user;
-}
+    // Create new user
+    const user = await prisma.user.create({
+        data: {
+            ...userData,
+            email,
+            password: hashedPassword,
+        },
+    });
 
+    return user;
+};
 const getAllUsers = async () => {
   const users = await prisma.user.findMany();
   return users;

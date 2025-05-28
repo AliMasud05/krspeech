@@ -95,26 +95,28 @@ subscriptions Subscription[]
   userId String
   user User @relation(fields: [userId], references: [id])
 }
-
 model Team {
   id String @id @default(cuid())
   name String
   description String?
-  degination String?
+  designation String?  // Corrected spelling
   image String?
 }
 
 model BlogPost {
-  id String @id @default(cuid())
-  title String
-  image String?
-  content String
-  authorId String
+  id        String   @id @default(cuid())
+  title     String
+  image     String?
+  content   String
+  authorId  String
+  deletedAt DateTime?  // Add this field
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   author User @relation(fields: [authorId], references: [id])
+  
+  @@map("blog_posts")
 }
 
 model SupportTicket {

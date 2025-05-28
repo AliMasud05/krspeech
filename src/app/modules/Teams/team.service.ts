@@ -1,34 +1,71 @@
-import { PrismaClient, Team } from '@prisma/client';
+import httpStatus from "http-status";
+import ApiError from "../../../errors/ApiErrors";
+import prisma from "../../../shared/prisma";
 
-const prisma = new PrismaClient();
-
-export type CreateTeamData = {
-  name: string;
-  description?: string;
-  degination?: string;
-  image?: string;
+const createTeam = async (payload: {
+    name: string;
+    description?: string;
+    designation?: string;
+    image?: string;
+}) => {
+    const result = await prisma.team.create({
+        data: payload
+    });
+    return result;
 };
 
-export class TeamService {
-  async create(data: CreateTeamData): Promise<Team> {
-    return prisma.team.create({ data });
-  }
+const getAllTeams = async () => {
+    const result = await prisma.team.findMany();
+    return result;
+};
 
-  async findAll(): Promise<Team[]> {
-    return prisma.team.findMany();
-  }
+const getTeamById = async (id: string) => {
+    const result = await prisma.team.findUnique({
+        where: { id }
+    });
+    
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Team member not found");
+    }
+    
+    return result;
+};
 
-  async findById(id: string): Promise<Team | null> {
-    return prisma.team.findUnique({ where: { id } });
-  }
+const updateTeam = async (id: string, payload: {
+    name?: string;
+    description?: string;
+    designation?: string;
+    image?: string;
+}) => {
+    const result = await prisma.team.update({
+        where: { id },
+        data: payload
+    });
+    return result;
+};
 
-  async update(id: string, data: Partial<CreateTeamData>): Promise<Team> {
-    return prisma.team.update({ where: { id }, data });
-  }
+const deleteTeam = async (id: string) => {
+    // First verify the team member exists
+    const teamMember = await prisma.team.findUnique({
+        where: { id }
+    });
+    
+    if (!teamMember) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Team member not found");
+    }
 
-  async delete(id: string): Promise<Team> {
-    return prisma.team.delete({ where: { id } });
-  }
-}
+    // Perform the hard delete
+    const result = await prisma.team.delete({
+        where: { id }
+    });
+    
+    return result;
+};
 
-export const teamService = new TeamService();
+export const TeamServices = {
+    createTeam,
+    getAllTeams,
+    getTeamById,
+    updateTeam,
+    deleteTeam
+};

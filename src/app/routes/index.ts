@@ -2,7 +2,9 @@ import express from "express";
 
 import { AuthRoutes } from "../modules/Auth/auth.routes";
 import { UserRoutes } from "../modules/User/user.routes";
-import { teamRoutes } from "../modules/Teams/team.route";
+import { SupportTicketRoutes } from "../modules/SupportTicket/support-ticket.route";
+import { BlogRoutes } from "../modules/Blog/blog.route";
+import { TeamRoutes } from "../modules/Teams/team.route";
 
 const router = express.Router();
 
@@ -17,8 +19,17 @@ const moduleRoutes = [
   },
   {
     path: "/teams",
-    route: teamRoutes,
+    route: TeamRoutes,
+  },
+  {
+    path: "/support-ticket",
+    route: SupportTicketRoutes,
+  },
+  {
+    path: "/blog",
+    route:BlogRoutes,
   }
+  
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

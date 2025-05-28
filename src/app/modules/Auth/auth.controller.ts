@@ -49,6 +49,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   const result = await AuthServices.loginUser(email, password);
+  res.cookie("token", result.accessToken, { httpOnly: true });
 
 
   sendResponse(res, {

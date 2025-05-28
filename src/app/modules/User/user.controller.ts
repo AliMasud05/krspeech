@@ -5,16 +5,23 @@ import sendResponse from "../../../shared/sendResponse";
 import { UserServices } from "./user.service";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
-    const { firstName,lastName,email, password } = req.body;
-    const result = await UserServices.registerUser({firstName,lastName,email,password});
+    const { first_name, last_name, email, password, ...addressFields } = req.body;
+    
+    const result = await UserServices.registerUser({
+        first_name,
+        last_name,
+        email,
+        password,
+        ...addressFields
+    });
+    
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "User registered successfully",
         data: result,
     });
-}
-);
+});
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     const result = await UserServices.getAllUsers();
     sendResponse(res, {
