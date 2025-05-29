@@ -123,13 +123,18 @@ model SupportTicket {
   id String @id @default(cuid())
   title String
   description String
-  status String @default("open") // open, in-progress, closed
+  status     ticketStatus @default(OPEN)
   priority String @default("medium") // low, medium, high
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   userId String
   user User @relation(fields: [userId], references: [id])
+}
+enum ticketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
 }
 
 model ContentItem {
@@ -199,3 +204,47 @@ model Subscription {
   
   @@map("subscriptions")
 }
+
+model ContactFile {
+  id               String            @id @default(cuid())
+  filename         String
+  originalName     String
+  mimeType         String
+  size             Int
+  url              String
+  contactSubmission ContactSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId     String
+  createdAt        DateTime          @default(now())
+
+  @@map("contact_files")
+}
+// Define the ContactStatus enum
+enum ContactStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+// Add the relation to ContactSubmission model
+model ContactSubmission {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  subject     String?
+  message     String
+  status      ContactStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  files       ContactFile[]
+  
+  // Optional: Add fields for internal tracking
+  assignedTo  String?
+  response    String?
+  respondedAt DateTime?
+
+  @@map("contact_submissions")
+}
+

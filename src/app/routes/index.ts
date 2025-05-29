@@ -5,6 +5,7 @@ import { UserRoutes } from "../modules/User/user.routes";
 import { SupportTicketRoutes } from "../modules/SupportTicket/support-ticket.route";
 import { BlogRoutes } from "../modules/Blog/blog.route";
 import { TeamRoutes } from "../modules/Teams/team.route";
+import { ContactSubmissionRoutes } from "../modules/contact/contact.route";
 
 const router = express.Router();
 
@@ -28,6 +29,10 @@ const moduleRoutes = [
   {
     path: "/blog",
     route:BlogRoutes,
+  },
+  {
+    path: "/contact",
+    route: ContactSubmissionRoutes,
   }
   
 ];
